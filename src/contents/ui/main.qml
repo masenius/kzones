@@ -30,6 +30,10 @@ Item {
         currentLayout = getCurrentLayout();
     }
 
+    function isOnAllDesktops(client) {
+        return client.onAllDesktops === true;
+    }
+
     function matchZone(client) {
         refreshClientArea();
         client.zone = -1;
@@ -56,7 +60,7 @@ Item {
         const windows = [];
         for (let i = 0; i < Workspace.stackingOrder.length; i++) {
             const client = Workspace.stackingOrder[i];
-            if (client.zone === zone && client.layout === layout && client.desktop === Workspace.currentDesktop && client.activity === Workspace.currentActivity && client.screen === Workspace.activeWindow.screen && checkFilter(client))
+            if (client.zone === zone && client.layout === layout && (client.desktop === Workspace.currentDesktop || isOnAllDesktops(client)) && client.activity === Workspace.currentActivity && client.screen === Workspace.activeWindow.screen && checkFilter(client))
                 windows.push(client);
 
         }
@@ -789,6 +793,15 @@ Item {
             if (config.trackLayoutPerDesktop)
                 currentLayout = getCurrentLayout();
 
+            // re-snap sticky (on-all-desktops) windows to their stored zone
+            // on the new desktop so they keep the same position/size
+            refreshClientArea();
+            for (let i = 0; i < Workspace.stackingOrder.length; i++) {
+                const client = Workspace.stackingOrder[i];
+                if (isOnAllDesktops(client) && client.zone != -1 && checkFilter(client))
+                    moveClientToZone(client, client.zone);
+
+            }
         }
 
         function onWindowAdded(client) {
